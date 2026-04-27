@@ -1,0 +1,13 @@
+{
+  "version": 2,
+  "dgSpecHash": "zuM1ORW2J0c=",
+  "success": true,
+  "projectFilePath": "C:\\Users\\Santiago\\Desktop\\Hexagonal-Microservices\\SuppliersService\\Domain\\Domain.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\Santiago\\.nuget\\packages\\microsoft.net.sdk.compilers.toolset\\9.0.311\\microsoft.net.sdk.compilers.toolset.9.0.311.nupkg.sha512",
+    "C:\\Users\\Santiago\\.nuget\\packages\\microsoft.windowsdesktop.app.ref\\8.0.24\\microsoft.windowsdesktop.app.ref.8.0.24.nupkg.sha512",
+    "C:\\Users\\Santiago\\.nuget\\packages\\microsoft.netcore.app.ref\\8.0.24\\microsoft.netcore.app.ref.8.0.24.nupkg.sha512",
+    "C:\\Users\\Santiago\\.nuget\\packages\\microsoft.aspnetcore.app.ref\\8.0.24\\microsoft.aspnetcore.app.ref.8.0.24.nupkg.sha512"
+  ],
+  "logs": []
+}
