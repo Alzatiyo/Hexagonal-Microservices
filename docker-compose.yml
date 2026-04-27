@@ -1,0 +1,156 @@
+services:
+
+  # ──────────────────────────────────────────────────────────────────────────────
+  # INFRASTRUCTURE
+  # ──────────────────────────────────────────────────────────────────────────────
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"       # AMQP
+      - "15672:15672"     # Management UI  →  http://localhost:15672  (guest/guest)
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - hexagonal-net
+
+  sqlserver-stock:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: sqlserver-stock
+    environment:
+      SA_PASSWORD: "YourStrong@Password123"
+      ACCEPT_EULA: "Y"
+    ports:
+      - "1433:1433"
+    healthcheck:
+      test: ["CMD", "/opt/mssql-tools18/bin/sqlcmd", "-S", "localhost",
+             "-U", "sa", "-P", "YourStrong@Password123",
+             "-Q", "SELECT 1", "-No"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+    networks:
+      - hexagonal-net
+
+  sqlserver-suppliers:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: sqlserver-suppliers
+    environment:
+      SA_PASSWORD: "YourStrong@Password123"
+      ACCEPT_EULA: "Y"
+    ports:
+      - "1434:1433"
+    healthcheck:
+      test: ["CMD", "/opt/mssql-tools18/bin/sqlcmd", "-S", "localhost",
+             "-U", "sa", "-P", "YourStrong@Password123",
+             "-Q", "SELECT 1", "-No"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+    networks:
+      - hexagonal-net
+
+  mongodb:
+    image: mongo:7
+    container_name: mongodb
+    ports:
+      - "27017:27017"
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - hexagonal-net
+
+  # ──────────────────────────────────────────────────────────────────────────────
+  # MICROSERVICES
+  # ──────────────────────────────────────────────────────────────────────────────
+
+  stock-service:
+    build:
+      context: ./StockService
+      dockerfile: Dockerfile
+    container_name: stock-service
+    ports:
+      - "5001:5001"       # Swagger → http://localhost:5001/swagger
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:5001   # fuerza el puerto interno a 5001
+      ConnectionStrings__DefaultConnection: >
+        Server=sqlserver-stock;Database=StockDb;
+        User Id=sa;Password=YourStrong@Password123;
+        TrustServerCertificate=True;
+      RabbitMQ__Host: rabbitmq
+      RabbitMQ__Port: "5672"
+      RabbitMQ__Username: guest
+      RabbitMQ__Password: guest
+    depends_on:
+      sqlserver-stock:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - hexagonal-net
+
+  suppliers-service:
+    build:
+      context: ./SuppliersService
+      dockerfile: Dockerfile
+    container_name: suppliers-service
+    ports:
+      - "5002:5002"       # Swagger → http://localhost:5002/swagger
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:5002   # fuerza el puerto interno a 5002
+      ConnectionStrings__DefaultConnection: >
+        Server=sqlserver-suppliers;Database=SuppliersDb;
+        User Id=sa;Password=YourStrong@Password123;
+        TrustServerCertificate=True;
+      RabbitMQ__Host: rabbitmq
+      RabbitMQ__Port: "5672"
+      RabbitMQ__Username: guest
+      RabbitMQ__Password: guest
+    depends_on:
+      sqlserver-suppliers:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - hexagonal-net
+
+  audit-service:
+    build:
+      context: ./AuditService
+      dockerfile: Dockerfile
+    container_name: audit-service
+    ports:
+      - "5003:5003"       # Swagger → http://localhost:5003/swagger
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:5003   # fuerza el puerto interno a 5003
+      MongoDb__ConnectionString: mongodb://mongodb:27017
+      MongoDb__DatabaseName: AuditDb
+      MongoDb__AuditCollection: Audits
+      RabbitMQ__Host: rabbitmq
+      RabbitMQ__Port: "5672"
+      RabbitMQ__Username: guest
+      RabbitMQ__Password: guest
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - hexagonal-net
+
+networks:
+  hexagonal-net:
+    driver: bridge

@@ -1,0 +1,16 @@
+{
+  "version": 2,
+  "dgSpecHash": "Xese2ulJfxA=",
+  "success": true,
+  "projectFilePath": "C:\\Users\\Santiago\\Desktop\\Hexagonal-Microservices\\StockService\\Aplication\\Aplication.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\Santiago\\.nuget\\packages\\rabbitmq.client\\6.8.1\\rabbitmq.client.6.8.1.nupkg.sha512",
+    "C:\\Users\\Santiago\\.nuget\\packages\\system.memory\\4.5.5\\system.memory.4.5.5.nupkg.sha512",
+    "C:\\Users\\Santiago\\.nuget\\packages\\system.threading.channels\\7.0.0\\system.threading.channels.7.0.0.nupkg.sha512",
+    "C:\\Users\\Santiago\\.nuget\\packages\\microsoft.net.sdk.compilers.toolset\\9.0.311\\microsoft.net.sdk.compilers.toolset.9.0.311.nupkg.sha512",
+    "C:\\Users\\Santiago\\.nuget\\packages\\microsoft.windowsdesktop.app.ref\\8.0.24\\microsoft.windowsdesktop.app.ref.8.0.24.nupkg.sha512",
+    "C:\\Users\\Santiago\\.nuget\\packages\\microsoft.netcore.app.ref\\8.0.24\\microsoft.netcore.app.ref.8.0.24.nupkg.sha512",
+    "C:\\Users\\Santiago\\.nuget\\packages\\microsoft.aspnetcore.app.ref\\8.0.24\\microsoft.aspnetcore.app.ref.8.0.24.nupkg.sha512"
+  ],
+  "logs": []
+}

@@ -1,0 +1,105 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "C:\\Users\\Santiago\\Desktop\\Hexagonal-Microservices\\Stock_Hexagonal\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{44B95B71-D6CE-4EE9-A475-87DBE172D4E8}|Infrastructure\\Infrastructure.csproj|c:\\users\\santiago\\desktop\\hexagonal-microservices\\stock_hexagonal\\infrastructure\\config\\infrastructureserviceextensions.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{44B95B71-D6CE-4EE9-A475-87DBE172D4E8}|Infrastructure\\Infrastructure.csproj|solutionrelative:infrastructure\\config\\infrastructureserviceextensions.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{3E27DF62-47B8-4C02-8783-1CF3818BF2CF}|Aplication\\Aplication.csproj|c:\\users\\santiago\\desktop\\hexagonal-microservices\\stock_hexagonal\\aplication\\usecases\\productusecase.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{3E27DF62-47B8-4C02-8783-1CF3818BF2CF}|Aplication\\Aplication.csproj|solutionrelative:aplication\\usecases\\productusecase.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{44B95B71-D6CE-4EE9-A475-87DBE172D4E8}|Infrastructure\\Infrastructure.csproj|c:\\users\\santiago\\desktop\\hexagonal-microservices\\stock_hexagonal\\infrastructure\\messaging\\restockrabbitmqpublisher.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{44B95B71-D6CE-4EE9-A475-87DBE172D4E8}|Infrastructure\\Infrastructure.csproj|solutionrelative:infrastructure\\messaging\\restockrabbitmqpublisher.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{1D4689E2-515D-4A5B-B4E2-464BB5737BB6}|Domain\\Domain.csproj|c:\\users\\santiago\\desktop\\hexagonal-microservices\\stock_hexagonal\\domain\\events\\restockrequestevent.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{1D4689E2-515D-4A5B-B4E2-464BB5737BB6}|Domain\\Domain.csproj|solutionrelative:domain\\events\\restockrequestevent.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{44B95B71-D6CE-4EE9-A475-87DBE172D4E8}|Infrastructure\\Infrastructure.csproj|c:\\users\\santiago\\desktop\\hexagonal-microservices\\stock_hexagonal\\infrastructure\\adapters\\rest\\suppliershttpclient.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{44B95B71-D6CE-4EE9-A475-87DBE172D4E8}|Infrastructure\\Infrastructure.csproj|solutionrelative:infrastructure\\adapters\\rest\\suppliershttpclient.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 0,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "InfrastructureServiceExtensions.cs",
+              "DocumentMoniker": "C:\\Users\\Santiago\\Desktop\\Hexagonal-Microservices\\Stock_Hexagonal\\Infrastructure\\Config\\InfrastructureServiceExtensions.cs",
+              "RelativeDocumentMoniker": "Infrastructure\\Config\\InfrastructureServiceExtensions.cs",
+              "ToolTip": "C:\\Users\\Santiago\\Desktop\\Hexagonal-Microservices\\Stock_Hexagonal\\Infrastructure\\Config\\InfrastructureServiceExtensions.cs",
+              "RelativeToolTip": "Infrastructure\\Config\\InfrastructureServiceExtensions.cs",
+              "ViewState": "AgIAAA8AAAAAAAAAAAAAACQAAAA7AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-04-26T20:41:23.658Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "RestockRabbitMqPublisher.cs",
+              "DocumentMoniker": "C:\\Users\\Santiago\\Desktop\\Hexagonal-Microservices\\Stock_Hexagonal\\Infrastructure\\Messaging\\RestockRabbitMqPublisher.cs",
+              "RelativeDocumentMoniker": "Infrastructure\\Messaging\\RestockRabbitMqPublisher.cs",
+              "ToolTip": "C:\\Users\\Santiago\\Desktop\\Hexagonal-Microservices\\Stock_Hexagonal\\Infrastructure\\Messaging\\RestockRabbitMqPublisher.cs",
+              "RelativeToolTip": "Infrastructure\\Messaging\\RestockRabbitMqPublisher.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAD8AAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-04-26T20:40:07.563Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "RestockRequestEvent.cs",
+              "DocumentMoniker": "C:\\Users\\Santiago\\Desktop\\Hexagonal-Microservices\\Stock_Hexagonal\\Domain\\Events\\RestockRequestEvent.cs",
+              "RelativeDocumentMoniker": "Domain\\Events\\RestockRequestEvent.cs",
+              "ToolTip": "C:\\Users\\Santiago\\Desktop\\Hexagonal-Microservices\\Stock_Hexagonal\\Domain\\Events\\RestockRequestEvent.cs",
+              "RelativeToolTip": "Domain\\Events\\RestockRequestEvent.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABkAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-04-26T20:38:40.039Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "SuppliersHttpClient.cs",
+              "DocumentMoniker": "C:\\Users\\Santiago\\Desktop\\Hexagonal-Microservices\\Stock_Hexagonal\\Infrastructure\\Adapters\\Rest\\SuppliersHttpClient.cs",
+              "RelativeDocumentMoniker": "Infrastructure\\Adapters\\Rest\\SuppliersHttpClient.cs",
+              "ToolTip": "C:\\Users\\Santiago\\Desktop\\Hexagonal-Microservices\\Stock_Hexagonal\\Infrastructure\\Adapters\\Rest\\SuppliersHttpClient.cs",
+              "RelativeToolTip": "Infrastructure\\Adapters\\Rest\\SuppliersHttpClient.cs",
+              "ViewState": "AgIAAA4AAAAAAAAAAAAQwBsAAAAuAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-04-26T20:34:40.195Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "ProductUseCase.cs",
+              "DocumentMoniker": "C:\\Users\\Santiago\\Desktop\\Hexagonal-Microservices\\Stock_Hexagonal\\Aplication\\UseCases\\ProductUseCase.cs",
+              "RelativeDocumentMoniker": "Aplication\\UseCases\\ProductUseCase.cs",
+              "ToolTip": "C:\\Users\\Santiago\\Desktop\\Hexagonal-Microservices\\Stock_Hexagonal\\Aplication\\UseCases\\ProductUseCase.cs",
+              "RelativeToolTip": "Aplication\\UseCases\\ProductUseCase.cs",
+              "ViewState": "AgIAAGkAAAAAAAAAAAAAwH4AAABnAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-04-26T20:05:56.961Z",
+              "EditorCaption": ""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
