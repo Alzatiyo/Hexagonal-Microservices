@@ -1,0 +1,8 @@
+# .dockerignore — AuditService
+# Excluye archivos que no deben entrar al contenedor
+
+**/bin/
+**/obj/
+**/.vs/
+**/.git/
+**/NuGetFallbackFolder/
