@@ -1,0 +1,1161 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Hexagonal Microservices — Panel de Control</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #12121a;
+    --surface2: #1a1a26;
+    --border: #2a2a40;
+    --accent-stock: #00e5a0;
+    --accent-suppliers: #ff6b35;
+    --accent-audit: #a78bfa;
+    --accent-danger: #ff4d6d;
+    --accent-warn: #ffd60a;
+    --text: #e8e8f0;
+    --text-muted: #6b6b8a;
+    --text-dim: #3a3a55;
+    --font-mono: 'Space Mono', monospace;
+    --font-display: 'Syne', sans-serif;
+    --radius: 4px;
+    --radius-lg: 8px;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-display);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* NOISE OVERLAY */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.035'/%3E%3C/svg%3E");
+    pointer-events: none; z-index: 9999; opacity: .4;
+  }
+
+  /* ── HEADER ── */
+  header {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(10,10,15,.92);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 32px;
+    display: flex; align-items: center; gap: 24px;
+    height: 60px;
+  }
+  header h1 {
+    font-size: 15px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase;
+    background: linear-gradient(90deg, var(--accent-stock), var(--accent-suppliers));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  header .tag { font-family: var(--font-mono); font-size: 10px; color: var(--text-muted); border: 1px solid var(--border); padding: 2px 8px; border-radius: 999px; }
+  header .status-dots { margin-left: auto; display: flex; gap: 10px; align-items: center; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--text-dim); transition: background .3s; }
+  .dot.online { background: var(--accent-stock); box-shadow: 0 0 8px var(--accent-stock); animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1}50%{opacity:.5} }
+
+  /* ── LAYOUT ── */
+  .app { display: flex; height: calc(100vh - 60px); }
+
+  /* ── SIDEBAR ── */
+  aside {
+    width: 220px; min-width: 220px;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    padding: 24px 0;
+    display: flex; flex-direction: column; gap: 4px;
+    overflow-y: auto;
+  }
+  .nav-section { padding: 0 16px 8px; font-size: 10px; font-family: var(--font-mono); color: var(--text-dim); letter-spacing: .15em; text-transform: uppercase; margin-top: 8px; }
+  .nav-item {
+    margin: 0 8px;
+    padding: 9px 12px;
+    border-radius: var(--radius);
+    cursor: pointer;
+    display: flex; align-items: center; gap: 10px;
+    font-size: 13px; font-weight: 600;
+    color: var(--text-muted);
+    transition: all .15s; border: 1px solid transparent;
+  }
+  .nav-item:hover { background: var(--surface2); color: var(--text); }
+  .nav-item.active { color: var(--text); border-color: var(--border); background: var(--surface2); }
+  .nav-item .icon { font-size: 16px; }
+  .nav-item.stock.active { color: var(--accent-stock); border-color: rgba(0,229,160,.2); background: rgba(0,229,160,.05); }
+  .nav-item.suppliers.active { color: var(--accent-suppliers); border-color: rgba(255,107,53,.2); background: rgba(255,107,53,.05); }
+  .nav-item.audit.active { color: var(--accent-audit); border-color: rgba(167,139,250,.2); background: rgba(167,139,250,.05); }
+
+  /* ── MAIN ── */
+  main { flex: 1; overflow-y: auto; padding: 32px; display: flex; flex-direction: column; gap: 28px; }
+
+  /* ── PAGE HEADER ── */
+  .page-header { display: flex; align-items: flex-end; gap: 16px; border-bottom: 1px solid var(--border); padding-bottom: 20px; }
+  .page-header h2 { font-size: 28px; font-weight: 800; }
+  .page-header .subtitle { font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); margin-bottom: 4px; }
+  .badge { font-family: var(--font-mono); font-size: 10px; padding: 3px 10px; border-radius: 999px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+  .badge-stock { background: rgba(0,229,160,.15); color: var(--accent-stock); border: 1px solid rgba(0,229,160,.3); }
+  .badge-suppliers { background: rgba(255,107,53,.15); color: var(--accent-suppliers); border: 1px solid rgba(255,107,53,.3); }
+  .badge-audit { background: rgba(167,139,250,.15); color: var(--accent-audit); border: 1px solid rgba(167,139,250,.3); }
+  .badge-port { background: var(--surface2); color: var(--text-muted); border: 1px solid var(--border); }
+
+  /* ── CARDS GRID ── */
+  .cards-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+    transition: border-color .2s, transform .2s;
+  }
+  .card:hover { border-color: #3a3a55; transform: translateY(-1px); }
+  .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  .card-title { font-size: 12px; font-family: var(--font-mono); color: var(--text-muted); letter-spacing: .1em; text-transform: uppercase; }
+  .card-value { font-size: 32px; font-weight: 800; }
+  .card-meta { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+
+  /* ── FORM SECTION ── */
+  .section { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 24px; }
+  .section-title { font-size: 13px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+  .section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; }
+  .form-group { display: flex; flex-direction: column; gap: 6px; }
+  .form-group.full { grid-column: 1 / -1; }
+  label { font-size: 11px; font-family: var(--font-mono); color: var(--text-muted); letter-spacing: .08em; text-transform: uppercase; }
+  input, select, textarea {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 9px 12px;
+    border-radius: var(--radius);
+    font-family: var(--font-mono);
+    font-size: 13px;
+    transition: border-color .15s;
+    width: 100%;
+  }
+  input:focus, select:focus, textarea:focus { outline: none; border-color: var(--text-muted); }
+  textarea { resize: vertical; min-height: 80px; }
+  select option { background: var(--surface2); }
+
+  .btn {
+    padding: 10px 20px; border: none; border-radius: var(--radius);
+    font-family: var(--font-display); font-size: 13px; font-weight: 700;
+    cursor: pointer; transition: all .15s; letter-spacing: .05em;
+    display: inline-flex; align-items: center; gap: 8px;
+  }
+  .btn:active { transform: scale(.97); }
+  .btn:disabled { opacity: .4; cursor: not-allowed; }
+  .btn-stock { background: var(--accent-stock); color: #000; }
+  .btn-stock:hover:not(:disabled) { background: #00ffb3; box-shadow: 0 0 20px rgba(0,229,160,.4); }
+  .btn-suppliers { background: var(--accent-suppliers); color: #fff; }
+  .btn-suppliers:hover:not(:disabled) { background: #ff8c5a; box-shadow: 0 0 20px rgba(255,107,53,.4); }
+  .btn-audit { background: var(--accent-audit); color: #000; }
+  .btn-audit:hover:not(:disabled) { background: #c4b5fd; box-shadow: 0 0 20px rgba(167,139,250,.4); }
+  .btn-ghost { background: transparent; color: var(--text-muted); border: 1px solid var(--border); }
+  .btn-ghost:hover:not(:disabled) { border-color: var(--text-muted); color: var(--text); }
+  .btn-danger { background: var(--accent-danger); color: #fff; }
+  .btn-danger:hover:not(:disabled) { background: #ff6b85; }
+
+  .btn-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
+
+  /* ── RESPONSE BOX ── */
+  .response-box {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    font-family: var(--font-mono); font-size: 12px;
+    min-height: 80px; max-height: 320px; overflow-y: auto;
+    white-space: pre-wrap; word-break: break-all;
+    color: var(--text-muted);
+    transition: border-color .3s;
+    margin-top: 16px;
+    line-height: 1.6;
+  }
+  .response-box.success { border-color: rgba(0,229,160,.4); color: var(--accent-stock); }
+  .response-box.error { border-color: rgba(255,77,109,.4); color: var(--accent-danger); }
+  .response-box.loading { border-color: rgba(255,214,10,.3); color: var(--accent-warn); }
+
+  /* ── TABLE ── */
+  .table-wrapper { overflow-x: auto; border-radius: var(--radius); border: 1px solid var(--border); }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { background: var(--surface2); padding: 10px 14px; text-align: left; font-family: var(--font-mono); font-size: 10px; color: var(--text-muted); letter-spacing: .1em; text-transform: uppercase; border-bottom: 1px solid var(--border); }
+  td { padding: 11px 14px; border-bottom: 1px solid var(--border); color: var(--text); }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--surface2); }
+  .status-pill { font-family: var(--font-mono); font-size: 10px; padding: 2px 8px; border-radius: 999px; font-weight: 700; }
+  .status-activo { background: rgba(0,229,160,.15); color: var(--accent-stock); }
+  .status-pending { background: rgba(255,214,10,.15); color: var(--accent-warn); }
+  .status-inactive { background: rgba(107,107,138,.15); color: var(--text-muted); }
+  .id-chip { font-family: var(--font-mono); font-size: 10px; color: var(--text-dim); background: var(--surface2); padding: 2px 6px; border-radius: 2px; cursor: pointer; transition: color .15s; }
+  .id-chip:hover { color: var(--text-muted); }
+
+  /* ── TABS ── */
+  .tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--border); margin-bottom: 20px; }
+  .tab { padding: 8px 16px; font-size: 12px; font-family: var(--font-mono); color: var(--text-muted); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: all .15s; letter-spacing: .06em; }
+  .tab:hover { color: var(--text); }
+  .tab.active { color: var(--text); border-bottom-color: var(--text); }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* ── DIVIDER ── */
+  .divider { height: 1px; background: var(--border); margin: 8px 0; }
+
+  /* ── SPINNER ── */
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .spinner { width: 14px; height: 14px; border: 2px solid currentColor; border-top-color: transparent; border-radius: 50%; animation: spin .6s linear infinite; }
+
+  /* ── PAGE VISIBILITY ── */
+  .page { display: none; flex-direction: column; gap: 28px; animation: fadeIn .25s ease; }
+  .page.active { display: flex; }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:none} }
+
+  /* ── CONFIG ── */
+  .config-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  .config-card { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; }
+  .config-card h4 { font-size: 11px; font-family: var(--font-mono); color: var(--text-muted); margin-bottom: 10px; text-transform: uppercase; letter-spacing: .1em; }
+  .url-display { font-family: var(--font-mono); font-size: 12px; color: var(--text); word-break: break-all; }
+  
+  /* ── PATCH INLINE ── */
+  .inline-form { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; }
+  .inline-form .form-group { min-width: 120px; }
+  
+  /* ── TOAST ── */
+  #toast {
+    position: fixed; bottom: 24px; right: 24px; z-index: 10000;
+    background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-lg);
+    padding: 12px 18px; font-size: 13px; font-weight: 600;
+    transform: translateY(80px); opacity: 0;
+    transition: all .3s cubic-bezier(.34,1.56,.64,1);
+    display: flex; align-items: center; gap: 10px;
+    max-width: 340px;
+  }
+  #toast.show { transform: none; opacity: 1; }
+  #toast.success { border-color: rgba(0,229,160,.4); color: var(--accent-stock); }
+  #toast.error { border-color: rgba(255,77,109,.4); color: var(--accent-danger); }
+
+  @media (max-width: 768px) {
+    aside { width: 56px; min-width: 56px; }
+    .nav-item span { display: none; }
+    .nav-section { display: none; }
+    .config-grid { grid-template-columns: 1fr; }
+    main { padding: 16px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>GRUPO 1 - STOCK</h1>
+  <span class="tag">v1.0 · .NET 8</span>
+  <div class="status-dots">
+    <span class="dot" id="dot-stock" title="StockService :5001"></span>
+    <span class="dot" id="dot-suppliers" title="SuppliersService :5002"></span>
+    <span class="dot" id="dot-audit" title="AuditService :5003"></span>
+  </div>
+</header>
+
+<div class="app">
+  <aside>
+    <div class="nav-section">Servicios</div>
+    <div class="nav-item stock active" data-page="stock">
+      <span class="icon">📦</span><span>Stock</span>
+    </div>
+    <div class="nav-item suppliers" data-page="suppliers">
+      <span class="icon">🏭</span><span>Suppliers</span>
+    </div>
+    <div class="nav-item audit" data-page="audit">
+      <span class="icon">📋</span><span>Audit</span>
+    </div>
+    <div class="divider" style="margin:12px 16px;"></div>
+    <div class="nav-section">Sistema</div>
+    <div class="nav-item" data-page="config">
+      <span class="icon">⚙️</span><span>Configuración</span>
+    </div>
+  </aside>
+
+  <main>
+
+    <!-- ══════════ STOCK PAGE ══════════ -->
+    <div class="page active" id="page-stock">
+      <div class="page-header">
+        <div>
+          <div class="subtitle">Microservicio</div>
+          <h2>📦 Stock Service</h2>
+        </div>
+        <span class="badge badge-stock">Puerto 5001</span>
+        <span class="badge badge-port">Hexagonal</span>
+      </div>
+
+      <!-- Stats Row -->
+      <div class="cards-grid" id="stock-stats">
+        <div class="card">
+          <div class="card-header"><span class="card-title">Total Productos</span></div>
+          <div class="card-value" id="stat-total">—</div>
+          <div class="card-meta">Registrados en el sistema</div>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">Stock Activo</span></div>
+          <div class="card-value" style="color:var(--accent-stock)" id="stat-activo">—</div>
+          <div class="card-meta">Productos con estado Activo</div>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">Reabastecimiento</span></div>
+          <div class="card-value" style="color:var(--accent-warn)" id="stat-pending">—</div>
+          <div class="card-meta">Bajo el umbral mínimo</div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="tabs">
+          <div class="tab active" data-tab="stock-list">Listar Productos</div>
+          <div class="tab" data-tab="stock-create">Crear Producto</div>
+          <div class="tab" data-tab="stock-update">Actualizar</div>
+          <div class="tab" data-tab="stock-exit">Registrar Salida</div>
+          <div class="tab" data-tab="stock-delete">Eliminar</div>
+        </div>
+
+        <!-- LIST -->
+        <div class="tab-panel active" id="stock-list">
+          <div class="section-title">GET /api/product</div>
+          <button class="btn btn-stock" onclick="stockList()"><span id="sp-list"></span>Obtener Todos</button>
+          <div class="response-box" id="res-stock-list">// Presiona el botón para listar productos...</div>
+          <div id="stock-table-wrap" style="margin-top:16px"></div>
+        </div>
+
+        <!-- CREATE -->
+        <div class="tab-panel" id="stock-create">
+          <div class="section-title">POST /api/product</div>
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Nombre</label>
+              <input type="text" id="sc-name" placeholder="Arroz Blanco 1kg"/>
+            </div>
+            <div class="form-group">
+              <label>Descripción</label>
+              <input type="text" id="sc-desc" placeholder="Arroz de grano largo premium"/>
+            </div>
+            <div class="form-group">
+              <label>Stock Inicial</label>
+              <input type="number" id="sc-stock" placeholder="100" min="0"/>
+            </div>
+            <div class="form-group">
+              <label>Stock Mínimo</label>
+              <input type="number" id="sc-min" placeholder="20" min="0"/>
+            </div>
+            <div class="form-group">
+              <label>Precio</label>
+              <input type="number" id="sc-price" placeholder="5500.00" step="0.01"/>
+            </div>
+          </div>
+          <div class="btn-row">
+            <button class="btn btn-stock" onclick="stockCreate()"><span id="sp-create"></span>Crear Producto</button>
+            <button class="btn btn-ghost" onclick="stockFillDemo()">Demo rápido</button>
+          </div>
+          <div class="response-box" id="res-stock-create">// POST /api/product — awaiting request...</div>
+        </div>
+
+        <!-- UPDATE -->
+        <div class="tab-panel" id="stock-update">
+          <div class="section-title">PUT /api/product/{id}</div>
+          <div class="form-grid">
+            <div class="form-group full">
+              <label>ID del Producto (GUID)</label>
+              <input type="text" id="su-id" placeholder="550e8400-e29b-41d4-a716-446655440000"/>
+            </div>
+            <div class="form-group">
+              <label>Nombre</label>
+              <input type="text" id="su-name" placeholder="Arroz Blanco 1kg — Actualizado"/>
+            </div>
+            <div class="form-group">
+              <label>Descripción</label>
+              <input type="text" id="su-desc" placeholder="Nueva descripción"/>
+            </div>
+            <div class="form-group">
+              <label>Stock</label>
+              <input type="number" id="su-stock" placeholder="80"/>
+            </div>
+            <div class="form-group">
+              <label>Stock Mínimo</label>
+              <input type="number" id="su-min" placeholder="15"/>
+            </div>
+            <div class="form-group">
+              <label>Precio</label>
+              <input type="number" id="su-price" placeholder="5800.00" step="0.01"/>
+            </div>
+          </div>
+          <div class="btn-row">
+            <button class="btn btn-stock" onclick="stockUpdate()"><span id="sp-update"></span>Actualizar</button>
+          </div>
+          <div class="response-box" id="res-stock-update">// PUT /api/product/{id} — awaiting request...</div>
+        </div>
+
+        <!-- EXIT -->
+        <div class="tab-panel" id="stock-exit">
+          <div class="section-title">PATCH /api/product/{id}/exit/{quantity} — Regla de Negocio</div>
+          <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px;line-height:1.6">
+            Si <code style="background:var(--bg);padding:2px 6px;border-radius:2px;font-family:var(--font-mono)">stock_resultante ≤ stockMinimum</code> → Estado cambia a <span style="color:var(--accent-warn);font-weight:700">ReabastecimientoPendiente</span>
+          </p>
+          <div class="inline-form">
+            <div class="form-group" style="flex:1;min-width:280px">
+              <label>ID del Producto</label>
+              <input type="text" id="se-id" placeholder="GUID del producto"/>
+            </div>
+            <div class="form-group">
+              <label>Cantidad a Salir</label>
+              <input type="number" id="se-qty" placeholder="10" min="1" style="width:120px"/>
+            </div>
+            <button class="btn btn-suppliers" onclick="stockExit()" style="margin-bottom:0">
+              <span id="sp-exit"></span>Registrar Salida
+            </button>
+          </div>
+          <div class="response-box" id="res-stock-exit">// PATCH /api/product/{id}/exit/{qty} — awaiting request...</div>
+        </div>
+
+        <!-- DELETE -->
+        <div class="tab-panel" id="stock-delete">
+          <div class="section-title">DELETE /api/product/{id}</div>
+          <div class="inline-form">
+            <div class="form-group" style="flex:1;min-width:280px">
+              <label>ID del Producto</label>
+              <input type="text" id="sd-id" placeholder="GUID del producto"/>
+            </div>
+            <button class="btn btn-danger" onclick="stockDelete()"><span id="sp-del"></span>Eliminar</button>
+          </div>
+          <div class="response-box" id="res-stock-delete">// DELETE /api/product/{id} — awaiting request...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════ SUPPLIERS PAGE ══════════ -->
+    <div class="page" id="page-suppliers">
+      <div class="page-header">
+        <div>
+          <div class="subtitle">Microservicio</div>
+          <h2>🏭 Suppliers Service</h2>
+        </div>
+        <span class="badge badge-suppliers">Puerto 5002</span>
+        <span class="badge badge-port">Hexagonal</span>
+      </div>
+
+      <div class="section">
+        <div class="tabs">
+          <div class="tab active" data-tab="sup-list">Listar</div>
+          <div class="tab" data-tab="sup-create">Crear Proveedor</div>
+          <div class="tab" data-tab="sup-product">Asociar Producto</div>
+          <div class="tab" data-tab="sup-recommend">Recomendar</div>
+          <div class="tab" data-tab="sup-update">Actualizar</div>
+          <div class="tab" data-tab="sup-delete">Eliminar</div>
+        </div>
+
+        <!-- LIST -->
+        <div class="tab-panel active" id="sup-list">
+          <div class="section-title">GET /api/suppliers</div>
+          <button class="btn btn-suppliers" onclick="suppList()"><span id="sp-suplist"></span>Obtener Todos</button>
+          <div class="response-box" id="res-sup-list">// GET /api/suppliers — awaiting request...</div>
+          <div id="sup-table-wrap" style="margin-top:16px"></div>
+        </div>
+
+        <!-- CREATE SUPPLIER -->
+        <div class="tab-panel" id="sup-create">
+          <div class="section-title">POST /api/suppliers</div>
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Nombre del Proveedor</label>
+              <input type="text" id="spc-name" placeholder="Muebles Alfa"/>
+            </div>
+            <div class="form-group">
+              <label>Contacto</label>
+              <input type="text" id="spc-contact" placeholder="Juan Perez"/>
+            </div>
+            <div class="form-group">
+              <label>Email</label>
+              <input type="email" id="spc-email" placeholder="ventas@alfa.com"/>
+            </div>
+            <div class="form-group">
+              <label>Teléfono</label>
+              <input type="text" id="spc-phone" placeholder="555-1234"/>
+            </div>
+            <div class="form-group">
+              <label>Días de Entrega</label>
+              <input type="number" id="spc-days" placeholder="3" min="1"/>
+            </div>
+          </div>
+          <div class="btn-row">
+            <button class="btn btn-suppliers" onclick="suppCreate()"><span id="sp-supcreate"></span>Crear Proveedor</button>
+            <button class="btn btn-ghost" onclick="suppFillDemo()">Demo rápido</button>
+          </div>
+          <div class="response-box" id="res-sup-create">// POST /api/suppliers — awaiting request...</div>
+        </div>
+
+        <!-- ASSOCIATE PRODUCT -->
+        <div class="tab-panel" id="sup-product">
+          <div class="section-title">POST /api/suppliers/{id}/products — RF-06</div>
+          <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px;line-height:1.6">
+            Vincula un producto externo (de StockService) a un proveedor usando el <code style="background:var(--bg);padding:2px 6px;border-radius:2px;font-family:var(--font-mono)">ExternalProductId</code>.
+          </p>
+          <div class="form-grid">
+            <div class="form-group full">
+              <label>ID del Proveedor</label>
+              <input type="text" id="spa-supid" placeholder="GUID del proveedor"/>
+            </div>
+            <div class="form-group full">
+              <label>External Product ID (de StockService)</label>
+              <input type="text" id="spa-prodid" placeholder="3fa85f64-5717-4562-b3fc-2c963f66afa6"/>
+            </div>
+            <div class="form-group">
+              <label>Nombre del Producto</label>
+              <input type="text" id="spa-prodname" placeholder="Silla Gamer"/>
+            </div>
+            <div class="form-group">
+              <label>Precio Unitario</label>
+              <input type="number" id="spa-price" placeholder="450.00" step="0.01"/>
+            </div>
+            <div class="form-group">
+              <label>Disponible</label>
+              <select id="spa-avail">
+                <option value="true">Sí</option>
+                <option value="false">No</option>
+              </select>
+            </div>
+          </div>
+          <div class="btn-row">
+            <button class="btn btn-suppliers" onclick="suppAssociateProduct()"><span id="sp-asso"></span>Asociar Producto</button>
+          </div>
+          <div class="response-box" id="res-sup-product">// POST /api/suppliers/{id}/products — awaiting request...</div>
+        </div>
+
+        <!-- RECOMMEND -->
+        <div class="tab-panel" id="sup-recommend">
+          <div class="section-title">GET /api/suppliers/by-product/{productId} — RF-07 Regla de Negocio</div>
+          <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px;line-height:1.6">
+            Retorna proveedores activos para un producto, ordenados por <strong>menor DeliveryDays</strong>. El primero lleva <code style="background:var(--bg);padding:2px 6px;font-family:var(--font-mono)">isRecommended: true</code>.
+          </p>
+          <div class="inline-form">
+            <div class="form-group" style="flex:1">
+              <label>External Product ID</label>
+              <input type="text" id="srec-id" placeholder="3fa85f64-5717-4562-b3fc-2c963f66afa6"/>
+            </div>
+            <button class="btn btn-suppliers" onclick="suppRecommend()"><span id="sp-rec"></span>Buscar Proveedores</button>
+          </div>
+          <div class="response-box" id="res-sup-recommend">// GET /api/suppliers/by-product/{productId} — awaiting request...</div>
+        </div>
+
+        <!-- UPDATE -->
+        <div class="tab-panel" id="sup-update">
+          <div class="section-title">PUT /api/suppliers/{id}</div>
+          <div class="form-grid">
+            <div class="form-group full">
+              <label>ID del Proveedor</label>
+              <input type="text" id="supu-id" placeholder="GUID del proveedor"/>
+            </div>
+            <div class="form-group">
+              <label>Nombre</label>
+              <input type="text" id="supu-name" placeholder="Nuevo nombre"/>
+            </div>
+            <div class="form-group">
+              <label>Contacto</label>
+              <input type="text" id="supu-contact" placeholder="Nuevo contacto"/>
+            </div>
+            <div class="form-group">
+              <label>Email</label>
+              <input type="email" id="supu-email" placeholder="nuevo@email.com"/>
+            </div>
+            <div class="form-group">
+              <label>Teléfono</label>
+              <input type="text" id="supu-phone" placeholder="555-9999"/>
+            </div>
+            <div class="form-group">
+              <label>Días de Entrega</label>
+              <input type="number" id="supu-days" placeholder="5"/>
+            </div>
+          </div>
+          <div class="btn-row">
+            <button class="btn btn-suppliers" onclick="suppUpdate()"><span id="sp-supupdate"></span>Actualizar</button>
+          </div>
+          <div class="response-box" id="res-sup-update">// PUT /api/suppliers/{id} — awaiting request...</div>
+        </div>
+
+        <!-- DELETE -->
+        <div class="tab-panel" id="sup-delete">
+          <div class="section-title">DELETE /api/suppliers/{id}</div>
+          <div class="inline-form">
+            <div class="form-group" style="flex:1">
+              <label>ID del Proveedor</label>
+              <input type="text" id="supd-id" placeholder="GUID del proveedor"/>
+            </div>
+            <button class="btn btn-danger" onclick="suppDelete()"><span id="sp-supdel"></span>Eliminar</button>
+          </div>
+          <div class="response-box" id="res-sup-delete">// DELETE /api/suppliers/{id} — awaiting request...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════ AUDIT PAGE ══════════ -->
+    <div class="page" id="page-audit">
+      <div class="page-header">
+        <div>
+          <div class="subtitle">Microservicio</div>
+          <h2>📋 Audit Service</h2>
+        </div>
+        <span class="badge badge-audit">Puerto 5003</span>
+        <span class="badge badge-port">Hexagonal</span>
+      </div>
+
+      <div class="section">
+        <div class="tabs">
+          <div class="tab active" data-tab="aud-list">Listar Eventos</div>
+          <div class="tab" data-tab="aud-get">Por ID</div>
+          <div class="tab" data-tab="aud-entity">Por Entidad</div>
+          <div class="tab" data-tab="aud-create">Registrar Evento</div>
+        </div>
+
+        <!-- LIST -->
+        <div class="tab-panel active" id="aud-list">
+          <div class="section-title">GET /api/audit</div>
+          <button class="btn btn-audit" onclick="auditList()"><span id="sp-audlist"></span>Obtener Todos los Eventos</button>
+          <div class="response-box" id="res-aud-list">// GET /api/audit — awaiting request...</div>
+          <div id="aud-table-wrap" style="margin-top:16px"></div>
+        </div>
+
+        <!-- GET BY ID -->
+        <div class="tab-panel" id="aud-get">
+          <div class="section-title">GET /api/audit/{id}</div>
+          <div class="inline-form">
+            <div class="form-group" style="flex:1">
+              <label>ID del Evento de Auditoría</label>
+              <input type="text" id="audi-id" placeholder="GUID del evento"/>
+            </div>
+            <button class="btn btn-audit" onclick="auditGetById()"><span id="sp-audget"></span>Buscar</button>
+          </div>
+          <div class="response-box" id="res-aud-get">// GET /api/audit/{id} — awaiting request...</div>
+        </div>
+
+        <!-- BY ENTITY -->
+        <div class="tab-panel" id="aud-entity">
+          <div class="section-title">GET /api/audit/entity/{entityId}</div>
+          <div class="inline-form">
+            <div class="form-group" style="flex:1">
+              <label>Entity ID (ej: ID de producto o proveedor)</label>
+              <input type="text" id="aude-id" placeholder="GUID de la entidad"/>
+            </div>
+            <button class="btn btn-audit" onclick="auditByEntity()"><span id="sp-audent"></span>Buscar por Entidad</button>
+          </div>
+          <div class="response-box" id="res-aud-entity">// GET /api/audit/entity/{entityId} — awaiting request...</div>
+        </div>
+
+        <!-- CREATE EVENT -->
+        <div class="tab-panel" id="aud-create">
+          <div class="section-title">POST /api/audit</div>
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Entity ID</label>
+              <input type="text" id="audc-entity" placeholder="GUID de la entidad afectada"/>
+            </div>
+            <div class="form-group">
+              <label>Tipo de Entidad</label>
+              <select id="audc-type">
+                <option value="Product">Product</option>
+                <option value="Supplier">Supplier</option>
+                <option value="SupplierProduct">SupplierProduct</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Acción</label>
+              <select id="audc-action">
+                <option value="CREATE">CREATE</option>
+                <option value="UPDATE">UPDATE</option>
+                <option value="DELETE">DELETE</option>
+                <option value="EXIT">EXIT</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Usuario</label>
+              <input type="text" id="audc-user" placeholder="sistema" value="sistema"/>
+            </div>
+            <div class="form-group full">
+              <label>Descripción / Detalle</label>
+              <textarea id="audc-desc" placeholder='{"campo":"valor_anterior","nuevoValor":"valor_nuevo"}'></textarea>
+            </div>
+          </div>
+          <div class="btn-row">
+            <button class="btn btn-audit" onclick="auditCreate()"><span id="sp-audcreate"></span>Registrar Evento</button>
+          </div>
+          <div class="response-box" id="res-aud-create">// POST /api/audit — awaiting request...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════ CONFIG PAGE ══════════ -->
+    <div class="page" id="page-config">
+      <div class="page-header">
+        <div>
+          <div class="subtitle">Sistema</div>
+          <h2>⚙️ Configuración</h2>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">URLs de los Microservicios</div>
+        <div class="config-grid">
+          <div class="config-card">
+            <h4>📦 Stock Service</h4>
+            <input type="text" id="cfg-stock" value="http://localhost:5001" style="margin-top:4px"/>
+            <div style="font-size:11px;color:var(--text-dim);margin-top:6px;font-family:var(--font-mono)">Swagger: /swagger</div>
+          </div>
+          <div class="config-card">
+            <h4>🏭 Suppliers Service</h4>
+            <input type="text" id="cfg-suppliers" value="http://localhost:5002" style="margin-top:4px"/>
+            <div style="font-size:11px;color:var(--text-dim);margin-top:6px;font-family:var(--font-mono)">Swagger: /swagger</div>
+          </div>
+          <div class="config-card">
+            <h4>📋 Audit Service</h4>
+            <input type="text" id="cfg-audit" value="http://localhost:5003" style="margin-top:4px"/>
+            <div style="font-size:11px;color:var(--text-dim);margin-top:6px;font-family:var(--font-mono)">Swagger: /swagger</div>
+          </div>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-stock" onclick="saveConfig()">Guardar Configuración</button>
+          <button class="btn btn-ghost" onclick="testAll()"><span id="sp-testall"></span>Probar Conexión</button>
+        </div>
+        <div class="response-box" id="res-config">// Resultados de prueba de conexión...</div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">Referencia Rápida — Endpoints</div>
+        <div class="table-wrapper">
+          <table>
+            <thead><tr><th>Servicio</th><th>Método</th><th>Endpoint</th><th>Descripción</th></tr></thead>
+            <tbody>
+              <tr><td><span class="badge badge-stock">Stock</span></td><td><code style="font-family:var(--font-mono);font-size:11px;color:#4ade80">POST</code></td><td><code style="font-family:var(--font-mono);font-size:11px">/api/product</code></td><td>Crear producto</td></tr>
+              <tr><td><span class="badge badge-stock">Stock</span></td><td><code style="font-family:var(--font-mono);font-size:11px;color:#60a5fa">GET</code></td><td><code style="font-family:var(--font-mono);font-size:11px">/api/product</code></td><td>Listar todos</td></tr>
+              <tr><td><span class="badge badge-stock">Stock</span></td><td><code style="font-family:var(--font-mono);font-size:11px;color:#60a5fa">GET</code></td><td><code style="font-family:var(--font-mono);font-size:11px">/api/product/{id}</code></td><td>Obtener por ID</td></tr>
+              <tr><td><span class="badge badge-stock">Stock</span></td><td><code style="font-family:var(--font-mono);font-size:11px;color:#fb923c">PUT</code></td><td><code style="font-family:var(--font-mono);font-size:11px">/api/product/{id}</code></td><td>Actualizar</td></tr>
+              <tr><td><span class="badge badge-stock">Stock</span></td><td><code style="font-family:var(--font-mono);font-size:11px;color:#f472b6">PATCH</code></td><td><code style="font-family:var(--font-mono);font-size:11px">/api/product/{id}/exit/{qty}</code></td><td>Registrar salida (Regla de Negocio)</td></tr>
+              <tr><td><span class="badge badge-stock">Stock</span></td><td><code style="font-family:var(--font-mono);font-size:11px;color:#f87171">DELETE</code></td><td><code style="font-family:var(--font-mono);font-size:11px">/api/product/{id}</code></td><td>Eliminar</td></tr>
+              <tr><td><span class="badge badge-suppliers">Suppliers</span></td><td><code style="font-family:var(--font-mono);font-size:11px;color:#4ade80">POST</code></td><td><code style="font-family:var(--font-mono);font-size:11px">/api/suppliers</code></td><td>Crear proveedor</td></tr>
+              <tr><td><span class="badge badge-suppliers">Suppliers</span></td><td><code style="font-family:var(--font-mono);font-size:11px;color:#60a5fa">GET</code></td><td><code style="font-family:var(--font-mono);font-size:11px">/api/suppliers</code></td><td>Listar todos</td></tr>
+              <tr><td><span class="badge badge-suppliers">Suppliers</span></td><td><code style="font-family:var(--font-mono);font-size:11px;color:#4ade80">POST</code></td><td><code style="font-family:var(--font-mono);font-size:11px">/api/suppliers/{id}/products</code></td><td>Asociar producto externo</td></tr>
+              <tr><td><span class="badge badge-suppliers">Suppliers</span></td><td><code style="font-family:var(--font-mono);font-size:11px;color:#60a5fa">GET</code></td><td><code style="font-family:var(--font-mono);font-size:11px">/api/suppliers/by-product/{productId}</code></td><td>Recomendar proveedor (Regla de Negocio)</td></tr>
+              <tr><td><span class="badge badge-audit">Audit</span></td><td><code style="font-family:var(--font-mono);font-size:11px;color:#60a5fa">GET</code></td><td><code style="font-family:var(--font-mono);font-size:11px">/api/audit</code></td><td>Listar eventos</td></tr>
+              <tr><td><span class="badge badge-audit">Audit</span></td><td><code style="font-family:var(--font-mono);font-size:11px;color:#4ade80">POST</code></td><td><code style="font-family:var(--font-mono);font-size:11px">/api/audit</code></td><td>Registrar evento</td></tr>
+              <tr><td><span class="badge badge-audit">Audit</span></td><td><code style="font-family:var(--font-mono);font-size:11px;color:#60a5fa">GET</code></td><td><code style="font-family:var(--font-mono);font-size:11px">/api/audit/entity/{entityId}</code></td><td>Eventos por entidad</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<script>
+// ─────────────────────────────────────────────
+//  CONFIG
+// ─────────────────────────────────────────────
+let CONFIG = {
+  stock: 'http://localhost:5001',
+  suppliers: 'http://localhost:5002',
+  audit: 'http://localhost:5003'
+};
+
+function getBase(svc) {
+  const el = document.getElementById('cfg-' + svc);
+  return el ? el.value.replace(/\/$/, '') : CONFIG[svc];
+}
+
+function saveConfig() {
+  CONFIG.stock = document.getElementById('cfg-stock').value.trim();
+  CONFIG.suppliers = document.getElementById('cfg-suppliers').value.trim();
+  CONFIG.audit = document.getElementById('cfg-audit').value.trim();
+  showToast('Configuración guardada ✓', 'success');
+}
+
+// ─────────────────────────────────────────────
+//  NAVIGATION
+// ─────────────────────────────────────────────
+document.querySelectorAll('.nav-item[data-page]').forEach(el => {
+  el.addEventListener('click', () => {
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    el.classList.add('active');
+    document.getElementById('page-' + el.dataset.page).classList.add('active');
+  });
+});
+
+// Tabs
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    const panel = tab.dataset.tab;
+    const parentSection = tab.closest('.section');
+    parentSection.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    parentSection.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById(panel).classList.add('active');
+  });
+});
+
+// ─────────────────────────────────────────────
+//  HTTP HELPERS
+// ─────────────────────────────────────────────
+function setLoading(spinnerId, state) {
+  const el = document.getElementById(spinnerId);
+  if (!el) return;
+  el.innerHTML = state ? '<div class="spinner" style="display:inline-block;margin-right:6px;"></div>' : '';
+}
+
+function setRes(id, data, isError = false) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.className = 'response-box ' + (isError ? 'error' : 'success');
+  el.textContent = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
+}
+
+async function apiFetch(url, options = {}, resId, spinnerId) {
+  if (spinnerId) setLoading(spinnerId, true);
+  const resEl = document.getElementById(resId);
+  if (resEl) { resEl.className = 'response-box loading'; resEl.textContent = `⏳ ${options.method || 'GET'} ${url}`; }
+
+  try {
+    const res = await fetch(url, {
+      headers: { 'Content-Type': 'application/json', ...options.headers },
+      ...options
+    });
+    const text = await res.text();
+    let data;
+    try { data = JSON.parse(text); } catch { data = text || `HTTP ${res.status}`; }
+    const ok = res.ok;
+    setRes(resId, data, !ok);
+    if (ok) showToast(`${res.status} ${res.statusText || 'OK'}`, 'success');
+    else showToast(`Error ${res.status}`, 'error');
+    return { ok, data, status: res.status };
+  } catch (e) {
+    const msg = `❌ No se pudo conectar a:\n${url}\n\nVerifica que el servicio está corriendo y que CORS está habilitado.\n\n${e.message}`;
+    setRes(resId, msg, true);
+    showToast('Sin conexión con el servicio', 'error');
+    return { ok: false, data: null };
+  } finally {
+    if (spinnerId) setLoading(spinnerId, false);
+  }
+}
+
+// ─────────────────────────────────────────────
+//  TOAST
+// ─────────────────────────────────────────────
+let toastTimer;
+function showToast(msg, type = 'success') {
+  const t = document.getElementById('toast');
+  t.textContent = type === 'success' ? '✓ ' + msg : '✗ ' + msg;
+  t.className = 'show ' + type;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { t.className = ''; }, 3000);
+}
+
+// ─────────────────────────────────────────────
+//  STATUS DOTS
+// ─────────────────────────────────────────────
+async function checkStatus(svc, dotId) {
+  const dot = document.getElementById(dotId);
+  try {
+    const r = await fetch(getBase(svc) + '/api/' + (svc === 'stock' ? 'product' : svc === 'suppliers' ? 'suppliers' : 'audit'), { signal: AbortSignal.timeout(3000) });
+    dot.className = 'dot ' + (r.ok ? 'online' : '');
+  } catch { dot.className = 'dot'; }
+}
+function pingAll() {
+  checkStatus('stock', 'dot-stock');
+  checkStatus('suppliers', 'dot-suppliers');
+  checkStatus('audit', 'dot-audit');
+}
+pingAll();
+setInterval(pingAll, 15000);
+
+// ─────────────────────────────────────────────
+//  STOCK FUNCTIONS
+// ─────────────────────────────────────────────
+async function stockList() {
+  const r = await apiFetch(getBase('stock') + '/api/product', {}, 'res-stock-list', 'sp-list');
+  if (r.ok && Array.isArray(r.data)) renderStockTable(r.data);
+  updateStockStats(r.data);
+}
+
+function updateStockStats(data) {
+  if (!Array.isArray(data)) return;
+  document.getElementById('stat-total').textContent = data.length;
+  document.getElementById('stat-activo').textContent = data.filter(p => p.status === 'Activo' || p.status === 0).length;
+  document.getElementById('stat-pending').textContent = data.filter(p => p.status === 'ReabastecimientoPendiente' || p.status === 1).length;
+}
+
+function renderStockTable(items) {
+  if (!items || !items.length) { document.getElementById('stock-table-wrap').innerHTML = ''; return; }
+  const rows = items.map(p => {
+    const status = (p.status === 'Activo' || p.status === 0) ? '<span class="status-pill status-activo">Activo</span>' : '<span class="status-pill status-pending">Reabastecimiento Pendiente</span>';
+    const id = `<span class="id-chip" title="Click para copiar" onclick="copyToClipboard('${p.id}')">${p.id ? p.id.substring(0,8) : '—'}…</span>`;
+    return `<tr>
+      <td>${id}</td>
+      <td><strong>${p.name || '—'}</strong></td>
+      <td>${p.descripcion || p.description || '—'}</td>
+      <td><strong>${p.stock ?? '—'}</strong></td>
+      <td>${p.stockminimum ?? p.stockMinimum ?? '—'}</td>
+      <td>$${p.price ?? '—'}</td>
+      <td>${status}</td>
+      <td>
+        <button class="btn btn-ghost" style="padding:4px 10px;font-size:11px" onclick="fillUpdate('${p.id}','${p.name}','${p.descripcion||p.description||''}',${p.stock},${p.stockminimum||p.stockMinimum||0},${p.price})">Editar</button>
+        <button class="btn btn-ghost" style="padding:4px 10px;font-size:11px;margin-left:4px" onclick="fillExit('${p.id}')">Salida</button>
+      </td>
+    </tr>`;
+  }).join('');
+  document.getElementById('stock-table-wrap').innerHTML = `<div class="table-wrapper"><table>
+    <thead><tr><th>ID</th><th>Nombre</th><th>Descripción</th><th>Stock</th><th>Mínimo</th><th>Precio</th><th>Estado</th><th>Acciones</th></tr></thead>
+    <tbody>${rows}</tbody>
+  </table></div>`;
+}
+
+function fillUpdate(id, name, desc, stock, min, price) {
+  document.getElementById('su-id').value = id;
+  document.getElementById('su-name').value = name;
+  document.getElementById('su-desc').value = desc;
+  document.getElementById('su-stock').value = stock;
+  document.getElementById('su-min').value = min;
+  document.getElementById('su-price').value = price;
+  document.querySelector('.tab[data-tab="stock-update"]').click();
+}
+
+function fillExit(id) {
+  document.getElementById('se-id').value = id;
+  document.querySelector('.tab[data-tab="stock-exit"]').click();
+}
+
+function stockFillDemo() {
+  document.getElementById('sc-name').value = 'Arroz Blanco 1kg';
+  document.getElementById('sc-desc').value = 'Arroz de grano largo premium';
+  document.getElementById('sc-stock').value = 100;
+  document.getElementById('sc-min').value = 20;
+  document.getElementById('sc-price').value = 5500;
+}
+
+async function stockCreate() {
+  const body = {
+    name: document.getElementById('sc-name').value,
+    descripcion: document.getElementById('sc-desc').value,
+    stock: parseInt(document.getElementById('sc-stock').value),
+    stockminimum: parseInt(document.getElementById('sc-min').value),
+    price: parseFloat(document.getElementById('sc-price').value)
+  };
+  if (!body.name) { showToast('El nombre es requerido', 'error'); return; }
+  await apiFetch(getBase('stock') + '/api/product', { method: 'POST', body: JSON.stringify(body) }, 'res-stock-create', 'sp-create');
+}
+
+async function stockUpdate() {
+  const id = document.getElementById('su-id').value.trim();
+  if (!id) { showToast('ID requerido', 'error'); return; }
+  const body = {
+    name: document.getElementById('su-name').value,
+    descripcion: document.getElementById('su-desc').value,
+    stock: parseInt(document.getElementById('su-stock').value),
+    stockminimum: parseInt(document.getElementById('su-min').value),
+    price: parseFloat(document.getElementById('su-price').value)
+  };
+  await apiFetch(getBase('stock') + `/api/product/${id}`, { method: 'PUT', body: JSON.stringify(body) }, 'res-stock-update', 'sp-update');
+}
+
+async function stockExit() {
+  const id = document.getElementById('se-id').value.trim();
+  const qty = document.getElementById('se-qty').value.trim();
+  if (!id || !qty) { showToast('ID y cantidad requeridos', 'error'); return; }
+  await apiFetch(getBase('stock') + `/api/product/${id}/exit/${qty}`, { method: 'PATCH' }, 'res-stock-exit', 'sp-exit');
+}
+
+async function stockDelete() {
+  const id = document.getElementById('sd-id').value.trim();
+  if (!id) { showToast('ID requerido', 'error'); return; }
+  await apiFetch(getBase('stock') + `/api/product/${id}`, { method: 'DELETE' }, 'res-stock-delete', 'sp-del');
+}
+
+// ─────────────────────────────────────────────
+//  SUPPLIERS FUNCTIONS
+// ─────────────────────────────────────────────
+async function suppList() {
+  const r = await apiFetch(getBase('suppliers') + '/api/suppliers', {}, 'res-sup-list', 'sp-suplist');
+  if (r.ok && Array.isArray(r.data)) renderSuppTable(r.data);
+}
+
+function renderSuppTable(items) {
+  if (!items || !items.length) { document.getElementById('sup-table-wrap').innerHTML = ''; return; }
+  const rows = items.map(s => {
+    const status = (s.status === 'Activo' || s.status === 0) ? '<span class="status-pill status-activo">Activo</span>' : '<span class="status-pill status-inactive">Inactivo</span>';
+    const id = `<span class="id-chip" onclick="copyToClipboard('${s.id}')">${s.id ? s.id.substring(0,8) : '—'}…</span>`;
+    return `<tr>
+      <td>${id}</td>
+      <td><strong>${s.name || '—'}</strong></td>
+      <td>${s.contactName || s.contact || '—'}</td>
+      <td>${s.email || '—'}</td>
+      <td>${s.phone || '—'}</td>
+      <td><strong>${s.deliveryDays ?? '—'}</strong> días</td>
+      <td>${status}</td>
+      <td>
+        <button class="btn btn-ghost" style="padding:4px 10px;font-size:11px" onclick="fillSuppAssoc('${s.id}')">Asociar Producto</button>
+      </td>
+    </tr>`;
+  }).join('');
+  document.getElementById('sup-table-wrap').innerHTML = `<div class="table-wrapper"><table>
+    <thead><tr><th>ID</th><th>Nombre</th><th>Contacto</th><th>Email</th><th>Teléfono</th><th>Entrega</th><th>Estado</th><th>Acciones</th></tr></thead>
+    <tbody>${rows}</tbody>
+  </table></div>`;
+}
+
+function fillSuppAssoc(id) {
+  document.getElementById('spa-supid').value = id;
+  document.querySelector('.tab[data-tab="sup-product"]').click();
+}
+
+function suppFillDemo() {
+  document.getElementById('spc-name').value = 'Muebles Alfa';
+  document.getElementById('spc-contact').value = 'Juan Perez';
+  document.getElementById('spc-email').value = 'ventas@alfa.com';
+  document.getElementById('spc-phone').value = '555-1234';
+  document.getElementById('spc-days').value = 3;
+}
+
+async function suppCreate() {
+  const body = {
+    name: document.getElementById('spc-name').value,
+    contactName: document.getElementById('spc-contact').value,
+    email: document.getElementById('spc-email').value,
+    phone: document.getElementById('spc-phone').value,
+    deliveryDays: parseInt(document.getElementById('spc-days').value)
+  };
+  if (!body.name) { showToast('El nombre es requerido', 'error'); return; }
+  await apiFetch(getBase('suppliers') + '/api/suppliers', { method: 'POST', body: JSON.stringify(body) }, 'res-sup-create', 'sp-supcreate');
+}
+
+async function suppAssociateProduct() {
+  const supId = document.getElementById('spa-supid').value.trim();
+  if (!supId) { showToast('ID del proveedor requerido', 'error'); return; }
+  const body = {
+    externalProductId: document.getElementById('spa-prodid').value,
+    productName: document.getElementById('spa-prodname').value,
+    unitPrice: parseFloat(document.getElementById('spa-price').value),
+    isAvailable: document.getElementById('spa-avail').value === 'true'
+  };
+  await apiFetch(getBase('suppliers') + `/api/suppliers/${supId}/products`, { method: 'POST', body: JSON.stringify(body) }, 'res-sup-product', 'sp-asso');
+}
+
+async function suppRecommend() {
+  const id = document.getElementById('srec-id').value.trim();
+  if (!id) { showToast('Product ID requerido', 'error'); return; }
+  await apiFetch(getBase('suppliers') + `/api/suppliers/by-product/${id}`, {}, 'res-sup-recommend', 'sp-rec');
+}
+
+async function suppUpdate() {
+  const id = document.getElementById('supu-id').value.trim();
+  if (!id) { showToast('ID requerido', 'error'); return; }
+  const body = {
+    name: document.getElementById('supu-name').value,
+    contactName: document.getElementById('supu-contact').value,
+    email: document.getElementById('supu-email').value,
+    phone: document.getElementById('supu-phone').value,
+    deliveryDays: parseInt(document.getElementById('supu-days').value)
+  };
+  await apiFetch(getBase('suppliers') + `/api/suppliers/${id}`, { method: 'PUT', body: JSON.stringify(body) }, 'res-sup-update', 'sp-supupdate');
+}
+
+async function suppDelete() {
+  const id = document.getElementById('supd-id').value.trim();
+  if (!id) { showToast('ID requerido', 'error'); return; }
+  await apiFetch(getBase('suppliers') + `/api/suppliers/${id}`, { method: 'DELETE' }, 'res-sup-delete', 'sp-supdel');
+}
+
+// ─────────────────────────────────────────────
+//  AUDIT FUNCTIONS
+// ─────────────────────────────────────────────
+async function auditList() {
+  const r = await apiFetch(getBase('audit') + '/api/audit', {}, 'res-aud-list', 'sp-audlist');
+  if (r.ok && Array.isArray(r.data)) renderAuditTable(r.data);
+}
+
+function renderAuditTable(items) {
+  if (!items || !items.length) { document.getElementById('aud-table-wrap').innerHTML = ''; return; }
+  const rows = items.map(a => {
+    const id = `<span class="id-chip" onclick="copyToClipboard('${a.id}')">${a.id ? a.id.substring(0,8) : '—'}…</span>`;
+    const date = a.createdAt || a.timestamp || a.date || '—';
+    return `<tr>
+      <td>${id}</td>
+      <td><span class="badge badge-audit" style="font-size:10px">${a.action || a.eventType || '—'}</span></td>
+      <td>${a.entityType || '—'}</td>
+      <td><span class="id-chip">${(a.entityId || '—').toString().substring(0,12)}…</span></td>
+      <td>${a.user || a.performedBy || 'sistema'}</td>
+      <td style="font-size:11px;color:var(--text-muted)">${date}</td>
+    </tr>`;
+  }).join('');
+  document.getElementById('aud-table-wrap').innerHTML = `<div class="table-wrapper"><table>
+    <thead><tr><th>ID</th><th>Acción</th><th>Entidad</th><th>Entity ID</th><th>Usuario</th><th>Fecha</th></tr></thead>
+    <tbody>${rows}</tbody>
+  </table></div>`;
+}
+
+async function auditGetById() {
+  const id = document.getElementById('audi-id').value.trim();
+  if (!id) { showToast('ID requerido', 'error'); return; }
+  await apiFetch(getBase('audit') + `/api/audit/${id}`, {}, 'res-aud-get', 'sp-audget');
+}
+
+async function auditByEntity() {
+  const id = document.getElementById('aude-id').value.trim();
+  if (!id) { showToast('Entity ID requerido', 'error'); return; }
+  await apiFetch(getBase('audit') + `/api/audit/entity/${id}`, {}, 'res-aud-entity', 'sp-audent');
+}
+
+async function auditCreate() {
+  const body = {
+    entityId: document.getElementById('audc-entity').value,
+    entityType: document.getElementById('audc-type').value,
+    action: document.getElementById('audc-action').value,
+    user: document.getElementById('audc-user').value,
+    description: document.getElementById('audc-desc').value
+  };
+  await apiFetch(getBase('audit') + '/api/audit', { method: 'POST', body: JSON.stringify(body) }, 'res-aud-create', 'sp-audcreate');
+}
+
+// ─────────────────────────────────────────────
+//  CONFIG TEST
+// ─────────────────────────────────────────────
+async function testAll() {
+  setLoading('sp-testall', true);
+  const el = document.getElementById('res-config');
+  el.className = 'response-box loading'; el.textContent = '⏳ Probando conexión con los 3 servicios...';
+  const results = [];
+  for (const [svc, label] of [['stock','StockService :5001'], ['suppliers','SuppliersService :5002'], ['audit','AuditService :5003']]) {
+    const base = document.getElementById('cfg-' + svc).value.trim();
+    const path = svc === 'stock' ? '/api/product' : svc === 'suppliers' ? '/api/suppliers' : '/api/audit';
+    try {
+      const r = await fetch(base + path, { signal: AbortSignal.timeout(4000) });
+      results.push(`✅ ${label}  →  HTTP ${r.status} ${r.ok ? 'OK' : 'ERROR'}`);
+    } catch (e) {
+      results.push(`❌ ${label}  →  Sin conexión (${e.message})`);
+    }
+  }
+  el.className = 'response-box'; el.textContent = results.join('\n');
+  setLoading('sp-testall', false);
+  pingAll();
+}
+
+// ─────────────────────────────────────────────
+//  UTILS
+// ─────────────────────────────────────────────
+function copyToClipboard(text) {
+  navigator.clipboard.writeText(text).then(() => showToast('ID copiado al portapapeles', 'success'));
+}
+</script>
+</body>
+</html>
