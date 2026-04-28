@@ -12,6 +12,12 @@ builder.Services.AddControllers()
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+
+var app = builder.Build();
+
+app.UseSwagger();
+app.UseSwaggerUI();
+
 // Habilitar CORS
 builder.Services.AddCors(options =>
 {
@@ -23,10 +29,6 @@ builder.Services.AddCors(options =>
     });
 });
 
-var app = builder.Build();
-
-app.UseSwagger();
-app.UseSwaggerUI();
 app.UseAuthorization();
 app.MapControllers();
 app.Run();
