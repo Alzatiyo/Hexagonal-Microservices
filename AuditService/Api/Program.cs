@@ -15,9 +15,6 @@ builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-app.UseSwagger();
-app.UseSwaggerUI();
-
 // Habilitar CORS
 builder.Services.AddCors(options =>
 {
@@ -28,6 +25,10 @@ builder.Services.AddCors(options =>
               .AllowAnyHeader();
     });
 });
+app.UseSwagger();
+app.UseSwaggerUI();
+
+app.UseCors("AllowAll");
 
 app.UseAuthorization();
 app.MapControllers();
