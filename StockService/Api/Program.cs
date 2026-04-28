@@ -21,6 +21,17 @@ using (var scope = app.Services.CreateScope())
     db.Database.Migrate();
 }
 
+// Habilitar CORS
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll", policy =>
+    {
+        policy.AllowAnyOrigin()
+              .AllowAnyMethod()
+              .AllowAnyHeader();
+    });
+});
+
 app.UseSwagger();
 app.UseSwaggerUI();
 app.UseAuthorization();
