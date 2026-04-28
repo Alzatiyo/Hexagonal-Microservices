@@ -12,10 +12,6 @@ builder.Services.AddControllers()
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-
-var app = builder.Build();
-
-// Habilitar CORS
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
@@ -25,6 +21,11 @@ builder.Services.AddCors(options =>
               .AllowAnyHeader();
     });
 });
+
+var app = builder.Build();
+
+// Habilitar CORS
+
 app.UseSwagger();
 app.UseSwaggerUI();
 
